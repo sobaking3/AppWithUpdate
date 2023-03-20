@@ -4,6 +4,9 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading;
+using Renci.SshNet;
+using Renci.SshNet.Sftp;
+using System.IO;
 
 namespace Updater
 {
@@ -11,38 +14,41 @@ namespace Updater
     {
         public static void Main(string[] args)
         {
-            string fromDir = args[0];
-            string toDir = args[1];
-            string exeToRun = args[2];
+            Console.WriteLine("Current version: " + GetAssemblyVersion());
+            //LoadUpdate();
+        }
 
-            Console.WriteLine("Киляем процессы!");
+        private static string GetAssemblyVersion()
+        {
+            System.Reflection.Assembly assembly = System.Reflection.Assembly.GetExecutingAssembly();
+            FileVersionInfo fvi = FileVersionInfo.GetVersionInfo(assembly.Location);
+            return fvi.FileVersion;
+        }
 
-            Process[] myProcesses2 = Process.GetProcessesByName(exeToRun);
-            for (int i = 1; i < myProcesses2.Length; i++) {
-                myProcesses2[i].Kill();
-                Console.WriteLine("Убит процесс!");
-            }
+        private static void LoadUpdate()
+        {
+            SftpClient sftp = new SftpClient("176.113.82.114", 1234, "root", "px50c20UHs");
 
-            Thread.Sleep(300);
+            sftp.Connect();
 
-            Console.WriteLine("Начинаем перемещение файлов!");
+            string version;
 
-            DirectoryInfo directoryInfo = new DirectoryInfo(fromDir);
-            
-            foreach(FileInfo file in directoryInfo.GetFiles())
+            using (Stream stream = File.Create("version.txt"))
             {
-                if(file.Name != "Updater.exe")
-                {
-                    Console.WriteLine("Перемещаем файл: " + file.FullName);
-                    File.Copy(@$"{file.FullName}", @$"{toDir}\{file.Name}", true);
-                }
+                Console.WriteLine(sftp.WorkingDirectory);
+                sftp.DownloadFile("updates/version.txt", stream);
             }
 
-            Console.WriteLine("Нажмите Enter для окончания обновления и запуска программы!");
-            Console.ReadLine();
-            Process.Start(exeToRun);
+            version = File.ReadAllText("version.txt").Trim();
 
+            Console.WriteLine("Последняя версия: " + version);
 
+            using (Stream stream = File.Create("update.zip"))
+            {
+                sftp.DownloadFile($"updates/{version}.zip", stream);
+            }
+
+            Console.WriteLine($"Скачано обновление: /updates/{version}.zip");
         }
     }
 }
