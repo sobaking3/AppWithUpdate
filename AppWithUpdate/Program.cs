@@ -20,6 +20,9 @@ namespace AppWithUpdate
         private static void DoSomeWork()
         {
             Console.WriteLine("Я ОБНАВИЛАСЬ Я МАЛАДЕЦ");
+            Console.WriteLine("МЫ ГЕИ");
+            Console.WriteLine("Update succes");
+            Console.ReadLine();
         }
     }
 }
